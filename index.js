@@ -2,6 +2,10 @@ console.log('🔍 index.js بدأ التنفيذ...');
 
 const bot = require('./bot');
 
+bot.telegram.getMe()
+  .then((me) => console.log('✅ getMe نجح:', me.username))
+  .catch((err) => console.error('❌ getMe فشل:', err.message));
+
 bot.launch({ dropPendingUpdates: true })
   .then(() => console.log('✅ البوت شغال دلوقتي...'))
   .catch((err) => {
