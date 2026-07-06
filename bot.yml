@@ -1,29 +1,35 @@
-name: Run Points Bot
+name: Run Bot
 
 on:
-  workflow_dispatch: {}
-  push:
-    branches: [main]
   schedule:
-    # بيعيد تشغيل الووركفلو كل 5 ساعات و 45 دقيقة عشان يفضل شغال باستمرار
-    # (الـ job الواحد أقصى مدة له 6 ساعات في GitHub Actions)
-    - cron: '0 */5 * * *'
+    # كل 6 ساعات تقريبًا - عدّل الرقم لو حابب
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}   # يسمحلك تشغّله يدوي من تبويب Actions
 
-# لو ووركفلو جديد بدأ، يوقف القديم عشان مايشتغلش نسختين مع بعض
 concurrency:
-  group: points-bot
-  cancel-in-progress: true
-
-permissions:
-  contents: write
+  group: bot-runner
+  cancel-in-progress: true   # يمنع تشغيل نسختين مع بعض لو حصل تداخل
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 350   # يقفل الجوب قبل ما يوصل حد الـ 6 ساعات (يفضي فرصة للـ cron التاني يشغّله)
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      # لو عندك ملف بيانات (SQLite / storage.js) وعاوز يفضل محفوظ بين كل تشغيلة
+      - name: Restore persisted data
+        uses: actions/cache@v4
+        with:
+          path: |
+            *.db
+            *.sqlite
+            data/
+          key: bot-storage-${{ github.run_id }}
+          restore-keys: |
+            bot-storage-
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -33,13 +39,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run the bot (with auto-restart on crash)
+      - name: Run bot
         env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          # عدّل أسماء الـ secrets دي بالظبط زي أسامي الـ env vars في config.js / gemini.js
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          END_TIME=$((SECONDS+20700)) # حوالي 5 ساعات و 45 دقيقة
-          while [ $SECONDS -lt $END_TIME ]; do
-            node index.js || echo "⚠️ البوت وقع، هيتشغل تاني بعد 5 ثواني..."
-            sleep 5
-          done
+        run: node index.js
