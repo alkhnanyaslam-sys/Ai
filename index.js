@@ -1,4 +1,4 @@
-const bot = require('./src/bot');
+const bot = require('./bot');
 
 bot.launch()
   .then(() => console.log('✅ البوت شغال دلوقتي...'))
