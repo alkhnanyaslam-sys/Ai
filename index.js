@@ -6,12 +6,17 @@ bot.telegram.getMe()
   .then((me) => console.log('✅ getMe نجح:', me.username))
   .catch((err) => console.error('❌ getMe فشل:', err.message));
 
-bot.launch({ dropPendingUpdates: true })
-  .then(() => console.log('✅ البوت شغال دلوقتي...'))
-  .catch((err) => {
-    console.error('❌ البوت فشل يشتغل:', err.message, err.stack);
-    process.exit(1);
-  });
+bot.telegram.getUpdates(5, 100, 0, [])
+  .then((updates) => console.log('✅ getUpdates نجح من جوه Actions، عدد:', updates.length))
+  .catch((err) => console.error('❌ getUpdates فشل من جوه Actions:', err.message));
+
+setTimeout(() => {
+  bot.launch({ dropPendingUpdates: true })
+    .then(() => console.log('✅ البوت شغال دلوقتي...'))
+    .catch((err) => {
+      console.error('❌ البوت فشل يشتغل:', err.message);
+    });
+}, 3000);
 
 setTimeout(() => {
   console.log('⏱️ لسه شغال بعد 20 ثانية - الاتصال بتليجرام شغال أو معلق');
