@@ -1,0 +1,45 @@
+name: Run Points Bot
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+  schedule:
+    # بيعيد تشغيل الووركفلو كل 5 ساعات و 45 دقيقة عشان يفضل شغال باستمرار
+    # (الـ job الواحد أقصى مدة له 6 ساعات في GitHub Actions)
+    - cron: '0 */5 * * *'
+
+# لو ووركفلو جديد بدأ، يوقف القديم عشان مايشتغلش نسختين مع بعض
+concurrency:
+  group: points-bot
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run the bot (with auto-restart on crash)
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          END_TIME=$((SECONDS+20700)) # حوالي 5 ساعات و 45 دقيقة
+          while [ $SECONDS -lt $END_TIME ]; do
+            node index.js || echo "⚠️ البوت وقع، هيتشغل تاني بعد 5 ثواني..."
+            sleep 5
+          done
